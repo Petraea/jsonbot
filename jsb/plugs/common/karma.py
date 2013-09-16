@@ -18,6 +18,7 @@ from jsb.lib.persistconfig import PersistConfig
 
 import logging
 import re
+from operator import itemgetter
 
 ## defines
 
@@ -124,11 +125,14 @@ def handle_karmawhoup(bot, event):
     k = event.rest.lower()
     item = KarmaItem(event.channel.lower() + "-" + k)
     sd = StatDict(item.data.whoup)
-    res = []
-    for i in sd.top():
-        res.append("%s: %s" % i)
-    if res: event.reply("uppers of %s are: " % k, res)
-    else: event.reply("nobody upped %s yet" % k)
+#    res = []
+#    for i in sorted(sd.top(),key=itemgetter(1), reverse=True):
+#        res.append("%s: %s" % i)
+    res = ""
+    for item in sorted(sd.top(),key=itemgetter(1), reverse=True):
+        res += (str(item[0])+':'+str(item[1])+' ')
+    if res: event.reply("uppers of "+k+" are: "+ res)
+    else: event.reply("nobody upped "+k+" yet")
 
 cmnds.add("karma-whoup", handle_karmawhoup, ['OPER', 'USER', 'GUEST'])
 examples.add("karma-whoup", "show who upped an item", "karma-whoup jsb")
@@ -162,20 +166,25 @@ cmnds.add("karma-whodown", handle_karmawhodown, ['OPER', 'USER', 'GUEST'])
 examples.add("karma-whodown", "show who downed an item", "karma-whodown jsb")
 
 ## karma-good command
+#Fixed by Petraea - 100913 - It now works in a sensible fashion!
 
 def handle_karmagood(bot, event):
     """ arguments: none - show top karma items of a channel. """
     collection = PlugPersistCollection()
+#    event.reply('Processing karma list.')
     stats = StatDict()
-    objs = collection.objects(event.channel.lower())
+    objs = collection.objects()
     for name, obj in objs.iteritems():
        if not obj.data: logging.warn("%s is empty" % name) ; continue
-       item = stripname(name).split("-")[-1]
-       stats.upitem(item, obj.data.count)
-    res = []
-    for item in stats.top():
-        res.append("%s - %s" % item)
-    event.reply("top karma items of %s: " % event.channel, res)
+       item = stripname(name).split("-",2)[-1]
+       if stripname(name).split("-",2)[1] == event.channel.lower()[1:]:
+           stats.upitem(item, obj.data.count)
+    ktop = stats.top(limit=20)
+#    event.reply(str(ktop))
+    res = ""
+    for item in ktop:
+        res += (str(item[0])+':'+str(item[1])+' ')
+    event.reply('Top 20 Karma for '+event.channel+': '+ res)
     
-cmnds.add("karma-good", handle_karmagood, ["OPER", "USER", "GUEST"])
+cmnds.add("karma-good", handle_karmagood, ["OPER", "USER", "GUEST"], threaded=True)
 examples.add("karma-good", "show top karma items of a channel", "karma-good")
