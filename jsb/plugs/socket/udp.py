@@ -173,7 +173,7 @@ class Udplistener(object):
                     printto = header.group(2)    # is the nick/channel
                     # check if printto is in allowednicks
                     
-                    if cfg['udpalloednicks'] and not printto in cfg['udpallowednicks']:
+                    if cfg['udpallowednicks'] and not printto in cfg['udpallowednicks']:
                         logging.warn("udp - udp denied %s" % printto )
                         return
                     logging.debug('udp - ' + str(addr[0]) +  " - udp allowed")
